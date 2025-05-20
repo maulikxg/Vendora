@@ -1,0 +1,200 @@
+{% extends "app/base.html" %} {% block body %}
+<div class="flex justify-between">
+  <div class="ml-10 mt-10 font-bold text-xl">Sales Stats</div>
+  <div class="mr-20 mt-10">
+    <a class="bg-green-500 text-white px-2 py-4" href="{%url 'dashboard'%}"
+      >Dashboard</a
+    >
+  </div>
+</div>
+
+<div class="shadow-lg p-10 m-5">
+  <div class="text-5xl font-bold">$ {{total_sales.amount__sum}}</div>
+  <div class="mt-10">Lifetime Revenue</div>
+</div>
+
+<div class="flex">
+  <div class="p-5 w-1/3">
+    <div class="shadow-lg p-10">
+      <div class="text-4xl font-bold">$ {{yearly_sales.amount__sum}}</div>
+      <div class="">Yearly Revenue</div>
+    </div>
+  </div>
+
+  <div class="p-5 w-1/3">
+    <div class="shadow-lg p-10">
+      <div class="text-4xl font-bold">$ {{monthly_sales.amount__sum}}</div>
+      <div class="">Monthly Revenue</div>
+    </div>
+  </div>
+
+  <div class="p-5 w-1/3">
+    <div class="shadow-lg p-10">
+      <div class="text-4xl font-bold">$ {{weekly_sales.amount__sum}}</div>
+      <div class="">Weekly Revenue</div>
+    </div>
+  </div>
+</div>
+
+<div class="flex">
+  <div class="w-1/2 shadow-lg m-10" id="sales-table">
+    <div class="ml-10 mt-10 font-bold text-xl">30 Day Sales</div>
+    <div class="flex m-10 mt-5 mb-5">
+      <div class="w-1/2">Day</div>
+      <div class="w-1/2">Total Sales</div>
+    </div>
+    {% for daily_sales_sum in daily_sales_sums %}
+
+    <div class="flex m-10 mt-5 mb-5">
+      <div class="w-1/2" data-date="{{ daily_sales_sum.created_at__date }}">
+        {{ daily_sales_sum.created_at__date }}
+      </div>
+      <div class="w-1/2 day-sum font-bold text-green-500">
+        $ {{ daily_sales_sum.sum }}
+      </div>
+    </div>
+
+    {%endfor%}
+  </div>
+  <div class="w-1/2 shadow-lg m-5">
+    <div>
+      <canvas id="myChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="flex">
+  <div class="w-1/2 shadow-lg m-5">
+    <div>
+      <canvas id="myChart1"></canvas>
+    </div>
+  </div>
+  <div class="w-1/2 shadow-lg m-10">
+    <div class="ml-10 mt-10 font-bold text-xl">Product Sales</div>
+    <div class="flex m-10 mt-5 mb-5">
+      <div class="w-1/2">Product</div>
+      <div class="w-1/2">Total Sales</div>
+    </div>
+    {% for product_sales_sum in product_sales_sums %}
+
+    <div class="flex m-10 mt-5 mb-5">
+      <div
+        class="w-1/2"
+        data-product-name="{{ product_sales_sum.Product__name }}"
+      >
+        {{ product_sales_sum.Product__name }}
+      </div>
+      <div
+        class="w-1/2 font-bold text-green-500"
+        data-product-sum="$ {{ product_sales_sum.sum }}"
+      >
+        $ {{ product_sales_sum.sum }}
+      </div>
+    </div>
+
+    {%endfor%}
+  </div>
+</div>
+
+<script>
+  // First chart for daily sales
+  const sums = document.getElementsByClassName("day-sum");
+  const dates = document.querySelectorAll("[data-date]");
+  const sum_values = [];
+  const date_labels = [];
+
+  for (let i = 0; i < sums.length; i++) {
+    single_sum = sums[i].innerText.replace("$", "").trim();
+    sum_values.push(parseInt(single_sum));
+    date_labels.push(dates[i].getAttribute("data-date"));
+  }
+
+  const ctx = document.getElementById("myChart");
+  new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: date_labels,
+      datasets: [
+        {
+          label: "Sales for the last 30 days",
+          data: sum_values,
+          borderWidth: 1,
+          borderColor: "rgb(34, 197, 94)",
+          tension: 0.3,
+        },
+      ],
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function (value) {
+              return "$" + value;
+            },
+          },
+        },
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              return "$" + context.raw;
+            },
+          },
+        },
+      },
+    },
+  });
+
+  // Second chart for product sales
+  const productSums = document.querySelectorAll("[data-product-sum]");
+  const productNames = document.querySelectorAll("[data-product-name]");
+  const product_values = [];
+  const product_labels = [];
+
+  for (let i = 0; i < productSums.length; i++) {
+    product_sum = productSums[i].innerText.replace("$", "").trim();
+    product_values.push(parseInt(product_sum));
+    product_labels.push(productNames[i].getAttribute("data-product-name"));
+  }
+
+  const ctx1 = document.getElementById("myChart1");
+  new Chart(ctx1, {
+    type: "bar",
+    data: {
+      labels: product_labels,
+      datasets: [
+        {
+          label: "Product Sales",
+          data: product_values,
+          backgroundColor: "rgba(34, 197, 94, 0.5)",
+          borderColor: "rgb(34, 197, 94)",
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function (value) {
+              return "$" + value;
+            },
+          },
+        },
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              return "$" + context.raw;
+            },
+          },
+        },
+      },
+    },
+  });
+</script>
+{%endblock%}

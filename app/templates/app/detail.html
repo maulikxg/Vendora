@@ -1,0 +1,67 @@
+{% extends "app/base.html" %} {% block body %}
+
+<div class="flex p-10">
+  <div><img src=" https://wsssindia.in/images/no_img.png" alt="" /></div>
+
+  <div class="pl-10">
+    <div class="text-4xl mb-4">{{product.name}}</div>
+    <div class="mb-4">{{product.description}}</div>
+    <div class="mb-4 text-green-700 font-bold">${{product.price}}</div>
+    <div>
+      <button
+        id="checkout-button"
+        class="bg-green-500 text-white px-4 py-2 rounded"
+      >
+        Buy
+      </button>
+    </div>
+    <div class="mt-3" id="myemail" hidden>{{ request.user.email}}</div>
+  </div>
+</div>
+<script src="https://js.stripe.com/v3/"></script>
+<script type="text/javascript">
+  var stripe = Stripe("{{ stripe_publishable_key }}");
+  var checkoutButton = document.getElementById("checkout-button");
+  checkoutButton.addEventListener("click", function () {
+    console.log("Button clicked");
+
+    var email = document.getElementById("myemail").innerText;
+    console.log(email);
+    if (email.length == 0) {
+      alert("Please Enter your email");
+      return;
+    }
+    fetch("{% url 'api_checkout_session' product_id=product.id %}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: email,
+      }),
+    })
+      .then(function (response) {
+        if (!response.ok) {
+          return response.json().then((err) => Promise.reject(err));
+        }
+        return response.json();
+      })
+      .then(function (session) {
+        if (session.error) {
+          throw new Error(session.error);
+        }
+        return stripe.redirectToCheckout({ sessionId: session.sessionid });
+      })
+      .then(function (result) {
+        if (result && result.error) {
+          throw new Error(result.error.message);
+        }
+      })
+      .catch(function (error) {
+        console.error("Error:", error);
+        alert(error.message || "An error occurred. Please try again.");
+      });
+  });
+</script>
+
+{%endblock%}
